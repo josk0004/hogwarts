@@ -1,0 +1,24 @@
+info:
+  name: Create course
+  type: http
+  seq: 7
+
+http:
+  method: POST
+  url: "{{baseUrl}}/courses"
+  body:
+    type: multipart-form
+    data:
+      - name: name
+        type: text
+        value: Herbology
+      - name: teacher_id
+        type: text
+        value: "4"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

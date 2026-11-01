@@ -1,0 +1,24 @@
+info:
+  name: Create student
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/students"
+  body:
+    type: multipart-form
+    data:
+      - name: name
+        type: text
+        value: Neville Longbottom
+      - name: house_id
+        type: text
+        value: "4"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
