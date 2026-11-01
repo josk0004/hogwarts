@@ -1,7 +1,5 @@
 # Hogwarts API
 
-Et Express-baseret API til houses, teachers, students og courses.
-
 ## Start serveren
 
 Installer dependencies, hvis det ikke allerede er gjort:
@@ -71,7 +69,7 @@ I routes med `:id` skal `:id` erstattes med det konkrete numeriske id.
 
 ## Brug af endpoint-testene
 
-Endpoint-testene ligger i [hogwarts-bruno/](<C:/PBA Webudvikling/Backend/hogwarts - test/hogwarts-bruno/>)
+Endpoint-testene ligger i `hogwarts-bruno`
 og er lavet til [Bruno](https://www.usebruno.com/).
 
 1. Start PostgreSQL-databasen og API'et med `npm start`.
