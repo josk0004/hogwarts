@@ -15,6 +15,15 @@ http:
       - name: house_id
         type: text
         value: "1"
+      - name: employment_start
+        type: text
+        value: "1990-09-01"
+      - name: currently_active
+        type: text
+        value: "true"
+      - name: deceased
+        type: text
+        value: "false"
   auth: inherit
 
 settings:

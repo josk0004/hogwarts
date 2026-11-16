@@ -15,6 +15,15 @@ http:
       - name: teacher_id
         type: text
         value: "4"
+      - name: type
+        type: text
+        value: elective
+      - name: level
+        type: text
+        value: NEWT
+      - name: school_year
+        type: text
+        value: "6"
   auth: inherit
 
 settings:

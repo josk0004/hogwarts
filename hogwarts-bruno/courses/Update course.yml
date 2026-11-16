@@ -12,6 +12,15 @@ http:
       - name: name
         type: text
         value: Defence against the dark arts
+      - name: type
+        type: text
+        value: core
+      - name: level
+        type: text
+        value: OWL
+      - name: school_year
+        type: text
+        value: "5"
   auth: inherit
 
 settings:

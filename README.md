@@ -61,11 +61,30 @@ I routes med `:id` skal `:id` erstattes med det konkrete numeriske id.
 | GET    | `/courses`                         | Get all courses                |
 | GET    | `/courses/:id`                     | Get one course                 |
 | POST   | `/courses`                         | Create a course                |
-| PUT    | `/courses/:id`                     | Update a course name           |
+| PUT    | `/courses/:id`                     | Update course details          |
 | PUT    | `/courses/:id/teacher`             | Change a course teacher        |
 | POST   | `/courses/:id/students`            | Add a student to a course      |
 | DELETE | `/courses/:id/students/:studentId` | Remove a student from a course |
 | DELETE | `/courses/:id`                     | Delete a course                |
+
+### Grades
+
+| Method | Route          | Description       |
+| ------ | -------------- | ----------------- |
+| GET    | `/grades`      | Get all grades    |
+| GET    | `/grades/:letter` | Get one grade  |
+
+Grades are read-only reference data.
+
+### Exams
+
+| Method | Route        | Description      |
+| ------ | ------------ | ---------------- |
+| GET    | `/exams`     | Get all exams    |
+| GET    | `/exams/:id` | Get one exam     |
+| POST   | `/exams`     | Create an exam   |
+| PUT    | `/exams/:id` | Update an exam   |
+| DELETE | `/exams/:id` | Delete an exam   |
 
 ## Brug af endpoint-testene
 
@@ -90,10 +109,15 @@ den enkelte test, før den sendes.
 
 POST- og PUT-testene indeholder de felter, endpointet forventer, for eksempel:
 
-- teachers og students: `name` og `house_id`
-- courses: `name` og `teacher_id`
+- teachers: `name`, `house_id`, `employment_start`, `currently_active` og `deceased`
+- students: `name`, `house_id`, `birthday` og `school_year`
+- courses: `name`, `teacher_id`, `type`, `level` og `school_year`
+- exams: `course_id`, `student_id` og `grade`
 - ændring af course-teacher: `teacher_id`
 - tilføjelse af student til course: `student_id`
 
-Felterne er konfigureret som `multipart-form` i Bruno-testene. Brug derfor
-samme body-type, hvis en test ændres eller oprettes manuelt.
+`type` er `core`, `elective` eller `extra-curricular`. `level` er `OWL` for
+skoleår 1-5 og `NEWT` for skoleår 6-7. `school_year` skal være mellem 1 og 7.
+Datoer skal skrives som `YYYY-MM-DD`, og boolean-felter skal være `true` eller
+`false`. Felterne er konfigureret som `multipart-form` i Bruno-testene. Brug
+derfor samme body-type, hvis en test ændres eller oprettes manuelt.

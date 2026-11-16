@@ -1,6 +1,9 @@
 import "dotenv/config";
 
-import { Pool } from "pg";
+import { Pool, types } from "pg";
+
+// parse date as string instead of Date object
+types.setTypeParser(1082, (value) => value);
 
 const pool = new Pool({
   user: process.env.PGUSER || "postgres",

@@ -1,7 +1,7 @@
 import pool from "../db/database.js";
 
 const courseSelect = `
-  SELECT c.id, c.name, c.teacher_id,
+  SELECT c.id, c.name, c.teacher_id, c.type, c.level, c.school_year,
          json_build_object('id', t.id, 'name', t.name) AS teacher,
          COALESCE(
            json_agg(json_build_object('id', s.id, 'name', s.name) ORDER BY s.id)
@@ -24,16 +24,19 @@ export async function findCourseById(id) {
   return rows[0];
 }
 
-export async function createCourse(name, teacherId) {
+export async function createCourse(name, teacherId, type, level, schoolYear) {
   const { rows } = await pool.query(
-    "INSERT INTO courses (name, teacher_id) VALUES ($1, $2) RETURNING id",
-    [name, teacherId],
+    "INSERT INTO courses (name, teacher_id, type, level, school_year) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+    [name, teacherId, type, level, schoolYear],
   );
   return rows[0].id;
 }
 
-export async function updateCourseName(id, name) {
-  return pool.query("UPDATE courses SET name = $1 WHERE id = $2", [name, id]);
+export async function updateCourse(id, name, type, level, schoolYear) {
+  return pool.query(
+    "UPDATE courses SET name = $1, type = $2, level = $3, school_year = $4 WHERE id = $5",
+    [name, type, level, schoolYear, id],
+  );
 }
 
 export async function updateCourseTeacher(id, teacherId) {

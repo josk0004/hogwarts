@@ -17,6 +17,8 @@ Gælder for:
 - `GET /teachers`
 - `GET /students`
 - `GET /courses`
+- `GET /grades`
+- `GET /exams`
 
 ```text
 Modtag request
@@ -33,30 +35,59 @@ Gælder for:
 - `GET /teachers/:id`
 - `GET /students/:id`
 - `GET /courses/:id`
+- `GET /exams/:id`
 
 ```text
 Læs id fra URL
-Kontrollér at id er et helt tal
+Validér id med `IdDto` og Zod
 Hent objektet fra repository
 Hvis objektet ikke findes, returner 404
 Ellers returner objektet som JSON
 Hvis databasen fejler, returner serverfejl
 ```
 
-## Opret teacher eller student
+## DTO-validering
 
-Gælder for:
+Alle input-DTO'er valideres med Zod. Multipart-felter kommer ind som
+tekst, så tal og boolean-værdier konverteres før validering. Ved ugyldigt
+input returneres status 400 med valideringsfejlen.
 
-- `POST /teachers`
-- `POST /students`
+DTO'erne er:
+
+- `TeacherDto`
+- `StudentDto`
+- `CourseDto`
+- `CourseDetailsDto`
+- `ExamDto`
+- `IdDto`
+- `TeacherIdDto`
+- `StudentIdDto`
+
+## Opret teacher
 
 ```text
-Læs name og house_id fra request body
-Kontrollér at name findes
-Kontrollér at house_id er et helt tal
-Opret personen via repository
-Hent den nye person
-Returner personen med status 201
+Læs name, house_id, employment_start, currently_active og deceased
+Validér request body med TeacherDto og Zod
+Kontrollér navn, hus-id, dato og boolean-værdier
+Kontrollér at en aktiv lærer ikke starter i fremtiden
+Opret læreren via repository
+Hent den nye lærer
+Returner læreren med status 201
+Hvis huset ikke findes, returner 400
+Hvis databasen fejler, returner serverfejl
+```
+
+## Opret student
+
+Gælder for `POST /students`.
+
+```text
+Læs name, house_id, birthday og school_year
+Validér request body med StudentDto og Zod
+Kontrollér navn, hus-id, dato og skoleår mellem 1 og 7
+Opret studenten via repository
+Hent den nye student
+Returner studenten med status 201
 Hvis huset ikke findes, returner 400
 Hvis databasen fejler, returner serverfejl
 ```
@@ -70,9 +101,9 @@ Gælder for:
 
 ```text
 Læs id fra URL
-Kontrollér at id er et helt tal
-Læs name og house_id fra request body
-Kontrollér input
+Validér id med IdDto og Zod
+Læs alle felter fra den relevante request body
+Validér med TeacherDto eller StudentDto og Zod
 Opdatér personen via repository
 Hvis personen ikke findes, returner 404
 Hent den opdaterede person
@@ -90,7 +121,7 @@ Gælder for:
 
 ```text
 Læs id fra URL
-Kontrollér at id er et helt tal
+Validér id med IdDto og Zod
 Slet personen via repository
 Hvis personen ikke findes, returner 404
 Returner status 204 uden indhold
@@ -102,9 +133,10 @@ Hvis databasen fejler, returner serverfejl
 Gælder for `POST /courses`.
 
 ```text
-Læs name og teacher_id fra request body
-Kontrollér at name findes
-Kontrollér at teacher_id er et helt tal
+Læs name, teacher_id, type, level og school_year
+Validér request body med CourseDto og Zod
+Kontrollér course type, level og skoleår
+Kontrollér at OWL gælder for skoleår 1-5 og NEWT for skoleår 6-7
 Opret kurset via repository
 Hent det nye kursus med lærer og studerende
 Returner kurset med status 201
@@ -112,14 +144,16 @@ Hvis læreren ikke findes, returner 400
 Hvis databasen fejler, returner serverfejl
 ```
 
-## Opdatér course-navn
+## Opdatér course
 
 Gælder for `PUT /courses/:id`.
 
 ```text
-Læs id fra URL og name fra request body
-Kontrollér id og name
-Opdatér kursusnavnet via repository
+Læs id fra URL
+Validér id med IdDto og Zod
+Læs name, type, level og school_year fra request body
+Validér request body med CourseDetailsDto og Zod
+Opdatér kursusdetaljerne via repository
 Hvis kurset ikke findes, returner 404
 Hent det opdaterede kursus
 Returner kurset som JSON
@@ -131,8 +165,7 @@ Hvis databasen fejler, returner serverfejl
 Gælder for `PUT /courses/:id/teacher`.
 
 ```text
-Læs course-id fra URL og teacher_id fra request body
-Kontrollér at begge id'er er hele tal
+Validér course-id med IdDto og teacher_id med TeacherIdDto
 Skift læreren via repository
 Hvis kurset ikke findes, returner 404
 Hent det opdaterede kursus
@@ -146,8 +179,7 @@ Hvis databasen fejler, returner serverfejl
 Gælder for `POST /courses/:id/students`.
 
 ```text
-Læs course-id fra URL og student_id fra request body
-Kontrollér at begge id'er er hele tal
+Validér course-id med IdDto og student_id med StudentIdDto
 Kontrollér at kurset findes
 Tilføj studenten til kurset via repository
 Returner det opdaterede kursus med status 201
@@ -162,7 +194,7 @@ Gælder for `DELETE /courses/:id/students/:studentId`.
 
 ```text
 Læs course-id og student-id fra URL
-Kontrollér at begge id'er er hele tal
+Validér begge id'er med IdDto og Zod
 Kontrollér at kurset findes
 Fjern studenten fra kurset via repository
 Hvis studenten ikke er på kurset, returner 404
@@ -176,9 +208,66 @@ Gælder for `DELETE /courses/:id`.
 
 ```text
 Læs id fra URL
-Kontrollér at id er et helt tal
+Validér id med IdDto og Zod
 Slet kurset via repository
 Hvis kurset ikke findes, returner 404
+Returner status 204 uden indhold
+```
+
+## Grades
+
+Gælder for:
+
+- `GET /grades`
+- `GET /grades/:letter`
+
+```text
+Hent den faste karakterskala fra repository
+Returner karaktererne som JSON
+Ved opslag på én karakter, validér bogstavet
+Grades kan kun læses
+Hvis databasen fejler, returner serverfejl
+```
+
+## Opret exam
+
+Gælder for `POST /exams`.
+
+```text
+Læs course_id, student_id og grade fra request body
+Validér request body med ExamDto og Zod
+Konvertér multipart-værdier til id'er og stort karakterbogstav
+Opret eksamen via repository
+Hent den nye eksamen med kursus, student og karakterdetaljer
+Returner eksamen med status 201
+Hvis kursus, student eller grade ikke findes, returner 400
+Hvis studenten ikke er tilmeldt kurset, returner 400
+Hvis studenten allerede har en eksamen i kurset, returner 409
+Hvis databasen fejler, returner serverfejl
+```
+
+## Opdatér exam
+
+Gælder for `PUT /exams/:id`.
+
+```text
+Validér id med IdDto og body med ExamDto
+Opdatér eksamen via repository
+Hvis eksamen ikke findes, returner 404
+Kontrollér de samme foreign key-, enrollment- og uniqueness-regler som ved oprettelse
+Hent den opdaterede eksamen
+Returner eksamen som JSON
+Hvis databasen fejler, returner serverfejl
+```
+
+## Slet exam
+
+Gælder for `DELETE /exams/:id`.
+
+```text
+Validér id med IdDto
+Slet eksamen via repository
+Hvis eksamen ikke findes, returner 404
 Returner status 204 uden indhold
 Hvis databasen fejler, returner serverfejl
 ```

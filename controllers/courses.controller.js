@@ -2,21 +2,15 @@ import {
   findAllCourses,
   findCourseById,
   createCourse as insertCourse,
-  updateCourseName,
+  updateCourse as updateCourseFields,
   updateCourseTeacher,
   addStudentToCourse as insertStudent,
   removeStudentFromCourse as deleteStudent,
   deleteCourse as removeCourse,
 } from "../repositories/courses.repository.js";
-
-function toInt(value) {
-  if (typeof value === "string" && value.trim() !== "") value = Number(value);
-  return Number.isInteger(value) ? value : null;
-}
-
-function parseId(value) {
-  return toInt(value);
-}
+import { CourseDetailsDto, CourseDto, StudentIdDto, TeacherIdDto } from "../dtos/course.dto.js";
+import { IdDto } from "../dtos/id.dto.js";
+import { tryParseDto } from "../dtos/common.js";
 
 export async function getCourses(req, res) {
   try {
@@ -28,8 +22,9 @@ export async function getCourses(req, res) {
 }
 
 export async function getCourse(req, res) {
-  const id = parseId(req.params.id);
-  if (id === null) return res.status(400).json({ error: "Invalid id" });
+  const parsed = tryParseDto(IdDto, { id: req.params.id });
+  if (parsed.error) return res.status(400).json({ error: parsed.error });
+  const { id } = parsed.data;
   try {
     const course = await findCourseById(id);
     if (!course) return res.status(404).json({ error: "Course not found" });
@@ -41,12 +36,17 @@ export async function getCourse(req, res) {
 }
 
 export async function createCourse(req, res) {
-  const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
-  const teacherId = toInt(req.body?.teacher_id);
-  if (!name) return res.status(400).json({ error: "name is required" });
-  if (teacherId === null) return res.status(400).json({ error: "teacher_id must be an integer" });
+  const parsed = tryParseDto(CourseDto, req.body);
+  if (parsed.error) return res.status(400).json({ error: parsed.error });
+  const value = parsed.data;
   try {
-    const id = await insertCourse(name, teacherId);
+    const id = await insertCourse(
+      value.name,
+      value.teacherId,
+      value.type,
+      value.level,
+      value.schoolYear,
+    );
     res.status(201).json(await findCourseById(id));
   } catch (error) {
     if (error.code === "23503") return res.status(400).json({ error: "teacher_id does not exist" });
@@ -56,12 +56,20 @@ export async function createCourse(req, res) {
 }
 
 export async function updateCourse(req, res) {
-  const id = parseId(req.params.id);
-  const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
-  if (id === null) return res.status(400).json({ error: "Invalid id" });
-  if (!name) return res.status(400).json({ error: "name is required" });
+  const idResult = tryParseDto(IdDto, { id: req.params.id });
+  if (idResult.error) return res.status(400).json({ error: idResult.error });
+  const valueResult = tryParseDto(CourseDetailsDto, req.body);
+  if (valueResult.error) return res.status(400).json({ error: valueResult.error });
+  const { id } = idResult.data;
+  const value = valueResult.data;
   try {
-    const result = await updateCourseName(id, name);
+    const result = await updateCourseFields(
+      id,
+      value.name,
+      value.type,
+      value.level,
+      value.schoolYear,
+    );
     if (result.rowCount === 0) return res.status(404).json({ error: "Course not found" });
     res.json(await findCourseById(id));
   } catch (error) {
@@ -71,10 +79,12 @@ export async function updateCourse(req, res) {
 }
 
 export async function changeCourseTeacher(req, res) {
-  const id = parseId(req.params.id);
-  const teacherId = toInt(req.body?.teacher_id);
-  if (id === null) return res.status(400).json({ error: "Invalid id" });
-  if (teacherId === null) return res.status(400).json({ error: "teacher_id must be an integer" });
+  const idResult = tryParseDto(IdDto, { id: req.params.id });
+  if (idResult.error) return res.status(400).json({ error: idResult.error });
+  const teacherResult = tryParseDto(TeacherIdDto, req.body);
+  if (teacherResult.error) return res.status(400).json({ error: teacherResult.error });
+  const { id } = idResult.data;
+  const { teacherId } = teacherResult.data;
   try {
     const result = await updateCourseTeacher(id, teacherId);
     if (result.rowCount === 0) return res.status(404).json({ error: "Course not found" });
@@ -87,10 +97,12 @@ export async function changeCourseTeacher(req, res) {
 }
 
 export async function addStudentToCourse(req, res) {
-  const id = parseId(req.params.id);
-  const studentId = toInt(req.body?.student_id);
-  if (id === null) return res.status(400).json({ error: "Invalid id" });
-  if (studentId === null) return res.status(400).json({ error: "student_id must be an integer" });
+  const idResult = tryParseDto(IdDto, { id: req.params.id });
+  if (idResult.error) return res.status(400).json({ error: idResult.error });
+  const studentResult = tryParseDto(StudentIdDto, req.body);
+  if (studentResult.error) return res.status(400).json({ error: studentResult.error });
+  const { id } = idResult.data;
+  const { studentId } = studentResult.data;
   try {
     if (!(await findCourseById(id))) return res.status(404).json({ error: "Course not found" });
     await insertStudent(id, studentId);
@@ -104,9 +116,13 @@ export async function addStudentToCourse(req, res) {
 }
 
 export async function removeStudentFromCourse(req, res) {
-  const id = parseId(req.params.id);
-  const studentId = parseId(req.params.studentId);
-  if (id === null || studentId === null) return res.status(400).json({ error: "Invalid id" });
+  const idResult = tryParseDto(IdDto, { id: req.params.id });
+  const studentResult = tryParseDto(IdDto, { id: req.params.studentId });
+  if (idResult.error || studentResult.error) {
+    return res.status(400).json({ error: idResult.error || studentResult.error });
+  }
+  const { id } = idResult.data;
+  const { id: studentId } = studentResult.data;
   try {
     if (!(await findCourseById(id))) return res.status(404).json({ error: "Course not found" });
     const result = await deleteStudent(id, studentId);
@@ -121,8 +137,9 @@ export async function removeStudentFromCourse(req, res) {
 }
 
 export async function deleteCourse(req, res) {
-  const id = parseId(req.params.id);
-  if (id === null) return res.status(400).json({ error: "Invalid id" });
+  const parsed = tryParseDto(IdDto, { id: req.params.id });
+  if (parsed.error) return res.status(400).json({ error: parsed.error });
+  const { id } = parsed.data;
   try {
     const result = await removeCourse(id);
     if (result.rowCount === 0) return res.status(404).json({ error: "Course not found" });
